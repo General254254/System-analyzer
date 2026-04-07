@@ -1,0 +1,11 @@
+psutil
+wmi
+colorama
+scikit-learn
+pandas
+numpy
+joblib
+shap
+fastapi
+uvicorn
+sqlalchemy

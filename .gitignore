@@ -1,0 +1,19 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+venv/
+*.pyc
+
+# Data & Models
+data/
+models/*.pkl
+logs.db
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
