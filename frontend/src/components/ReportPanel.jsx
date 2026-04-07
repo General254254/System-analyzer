@@ -1,8 +1,52 @@
 import React from 'react';
-import { Download, CheckCircle, Clock } from 'lucide-react';
+import { Download, CheckCircle, Clock, FileJson, FileText } from 'lucide-react';
 
 export default function ReportPanel({ healthReport, triggerScan, isScanning }) {
   const recommendations = healthReport?.recommendations || [];
+  const hasData = healthReport && healthReport.overall_score > 0;
+
+  const downloadReport = (format) => {
+    if (!hasData) return;
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    let content = '';
+    let mimeType = 'text/plain';
+    let extension = 'txt';
+
+    if (format === 'json') {
+      content = JSON.stringify(healthReport, null, 2);
+      mimeType = 'application/json';
+      extension = 'json';
+    } else {
+      content = `SYSTEM HEALTH REPORT\n`;
+      content += `Generated: ${new Date().toLocaleString()}\n`;
+      content += `-----------------------------------\n`;
+      content += `Overall Score: ${healthReport.overall_score}/100\n`;
+      content += `Estimated Lifespan: ${healthReport.estimated_lifespan_months} months\n\n`;
+      content += `Component Scores:\n`;
+      Object.entries(healthReport.component_scores).forEach(([comp, score]) => {
+        content += `  - ${comp}: ${score === -1 ? 'N/A' : score + '/100'}\n`;
+      });
+      content += `\nFlags:\n`;
+      (healthReport.flags.length > 0 ? healthReport.flags : ['None detected']).forEach(flag => {
+        content += `  - ${flag}\n`;
+      });
+      content += `\nRecommendations:\n`;
+      (healthReport.recommendations.length > 0 ? healthReport.recommendations : ['System running optimally']).forEach((rec, i) => {
+        content += `  ${i + 1}. ${rec}\n`;
+      });
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `system-health-report-${timestamp}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col h-full">
@@ -11,7 +55,7 @@ export default function ReportPanel({ healthReport, triggerScan, isScanning }) {
         <button 
           onClick={triggerScan}
           disabled={isScanning}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded text-sm font-medium"
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded text-sm font-medium shadow-lg shadow-blue-500/20"
         >
           {isScanning ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -46,12 +90,20 @@ export default function ReportPanel({ healthReport, triggerScan, isScanning }) {
       </div>
 
       <div className="p-4 border-t border-slate-700 bg-slate-900/50 flex gap-3">
-        <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white transition rounded py-2 text-sm font-medium flex items-center justify-center space-x-2">
-          <Download className="w-4 h-4" />
+        <button 
+          onClick={() => downloadReport('json')}
+          disabled={!hasData}
+          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white transition rounded-lg py-2 text-sm font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FileJson className="w-4 h-4" />
           <span>JSON</span>
         </button>
-        <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white transition rounded py-2 text-sm font-medium flex items-center justify-center space-x-2">
-          <Download className="w-4 h-4" />
+        <button 
+          onClick={() => downloadReport('text')}
+          disabled={!hasData}
+          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white transition rounded-lg py-2 text-sm font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FileText className="w-4 h-4" />
           <span>TEXT</span>
         </button>
       </div>
